@@ -34,6 +34,7 @@ async fn get_earthquake(time: NaiveDateTime) -> Result<Vec<Feature>, Box<dyn Err
 
 pub fn watch_earthquakes(tx: Sender<f64>) -> () {
     let mut last_earthquake = Utc::now().naive_utc();
+    //let mut last_earthquake = NaiveDateTime::from_timestamp(1602851133, 0);
 
     loop {
         let new_earthquakes = get_earthquake(last_earthquake).unwrap();

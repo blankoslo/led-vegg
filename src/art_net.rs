@@ -1,6 +1,11 @@
 use artnet_protocol::{ArtCommand, Output};
 use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
 
+// The IP of the device running this SW
+const DEVICE_IP: &str = "192.168.1.223";
+
+const ART_NET_CONTROLLER_IP: &str = "192.168.1.122";
+
 pub struct ArtNet {
     socket: UdpSocket,
     broadcast_addr: SocketAddr,
@@ -8,8 +13,8 @@ pub struct ArtNet {
 
 impl ArtNet {
     pub fn new() -> Self {
-        let socket = UdpSocket::bind(("2.0.0.1", 6454)).unwrap();
-        let broadcast_addr = ("2.80.100.185", 6454)
+        let socket = UdpSocket::bind((DEVICE_IP, 6454)).unwrap();
+        let broadcast_addr = (ART_NET_CONTROLLER_IP, 6454)
             .to_socket_addrs()
             .unwrap()
             .next()
