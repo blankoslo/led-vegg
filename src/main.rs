@@ -1,7 +1,21 @@
-use futures::executor::block_on;
+use std::sync::mpsc;
+use std::thread;
 
+mod art_net;
 mod earthquakes;
 
 fn main() {
-    let properties = block_on(earthquakes::get_earthquake());
+    let art_net = art_net::ArtNet::new();
+
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        earthquakes::watch_earthquakes(tx);
+    });
+
+    loop {
+        let received = rx.recv().unwrap();
+
+        art_net.send_data(vec![(255. / 10. * received) as u8; 270])
+    }
 }

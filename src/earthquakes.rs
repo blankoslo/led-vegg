@@ -1,27 +1,50 @@
-use serde::{Deserialize};
+use chrono::prelude::{NaiveDateTime, Utc};
+use serde::Deserialize;
+use std::error::Error;
+use std::sync::mpsc::Sender;
+use std::{thread, time};
 
 #[derive(Deserialize, std::fmt::Debug, Copy, Clone)]
 pub struct Properties {
     mag: f64,
-    time: u64,
+    time: i64,
 }
 
-#[derive(Deserialize, std::fmt::Debug)]
+#[derive(Deserialize, std::fmt::Debug, Copy, Clone)]
 struct Feature {
     properties: Properties,
 }
 
-#[derive(Deserialize, std::fmt::Debug)]
+#[derive(Deserialize, std::fmt::Debug, Clone)]
 struct Response {
     features: Vec<Feature>,
 }
 
-const URL: &str = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=1&starttime=2020-09-25T10:30:47.002Z";
+const BASE_URL: &str =
+    "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=1&starttime=";
+const POLLING_TIME: time::Duration = time::Duration::from_secs(10);
 
 #[tokio::main]
-pub async fn get_earthquake() -> Result<Properties, Box<dyn std::error::Error>> {
-    let resp = reqwest::get(URL).await?.json::<Response>().await?;
-    //println!("{:?}", resp);
+async fn get_earthquake(time: NaiveDateTime) -> Result<Vec<Feature>, Box<dyn Error + Send + Sync>> {
+    let url = format!("{}{}", BASE_URL, time.format("%Y-%m-%dT%H:%M:%S"));
+    let resp = reqwest::get(&url).await?.json::<Response>().await?;
 
-    Ok(resp.features[0].properties)
+    Ok(resp.features)
+}
+
+pub fn watch_earthquakes(tx: Sender<f64>) -> () {
+    let mut last_earthquake = Utc::now().naive_utc();
+
+    loop {
+        let new_earthquakes = get_earthquake(last_earthquake).unwrap();
+
+        if new_earthquakes.len() > 0 {
+            let timestamp = (new_earthquakes[0].clone().properties.time / 1000) + 1 as i64;
+            last_earthquake = NaiveDateTime::from_timestamp(timestamp, 0);
+
+            tx.send(new_earthquakes[0].properties.mag).unwrap();
+        }
+
+        thread::sleep(POLLING_TIME);
+    }
 }
