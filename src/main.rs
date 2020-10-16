@@ -37,7 +37,7 @@ struct WGPUState {
 }
 
 impl WGPUState {
-    async fn new() -> Self {
+    async fn new(width: usize, height: usize) -> Self {
         // The handle to our GPU
         let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
         println!("instance: {:?}", instance);
@@ -132,7 +132,7 @@ impl WGPUState {
             alpha_to_coverage_enabled: false,
         });
 
-        let buffer_dimensions = BufferDimensions::new(10, 10);
+        let buffer_dimensions = BufferDimensions::new(width, height);
 
         let storage_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Storage Buffer"),
@@ -189,12 +189,7 @@ impl WGPUState {
                     attachment: &self.texture_view,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 1.0,
-                            g: 1.0,
-                            b: 1.0,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                         store: true,
                     },
                 }],
@@ -256,8 +251,16 @@ impl WGPUState {
 
 fn main() {
     use futures::executor::block_on;
-    let mut wgpu_state = block_on(WGPUState::new());
+    let mut wgpu_state = block_on(WGPUState::new(10, 10));
 
     let result = block_on(wgpu_state.render());
-    println!("{:?}", result);
+    let mut count = 0;
+    for r in result {
+        print!("{:?} ", r);
+
+        if count % 10 == 0 {
+            println!(" ");
+        }
+        count += 1;
+    }
 }
