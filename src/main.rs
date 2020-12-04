@@ -7,7 +7,7 @@ mod earthquakes;
 mod renderer;
 
 fn main() {
-    //let art_net = art_net::ArtNet::new();
+    let art_net = art_net::ArtNet::new();
 
     let (tx, rx) = mpsc::channel();
 
@@ -32,6 +32,7 @@ fn main() {
             count += 1;
         }
 
+        // TODO
         //art_net.send_data(vec![(255. / 10. * received) as u8; 270])
     }
 }
