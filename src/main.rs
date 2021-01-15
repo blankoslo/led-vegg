@@ -7,7 +7,7 @@ mod earthquakes;
 mod renderer;
 
 fn main() {
-    let art_net = art_net::ArtNet::new();
+    let mut art_net_controller = art_net::ArtNet::new();
 
     let (tx, rx) = mpsc::channel();
 
@@ -16,23 +16,22 @@ fn main() {
     });
 
     use futures::executor::block_on;
-    let mut wgpu_state = block_on(renderer::WGPUState::new(10, 10));
+    let mut wgpu_state = block_on(renderer::WGPUState::new(90, 1));
 
     loop {
-        let received = rx.recv().unwrap();
+        let earthquake = rx.recv().unwrap();
+        println!("Received earthquake: {}", earthquake);
 
         let result = block_on(wgpu_state.render());
-        let mut count = 0;
-        for r in result {
-            print!("{:?} ", r);
 
-            if count % 10 == 0 {
-                println!(" ");
+        let data: Vec<u8> = result.into_iter().map(|r| (r as f32 / 10. * earthquake) as u8).collect();
+
+        match art_net_controller.as_ref() {
+            Ok(anc) => anc.send_data(data),
+            Err(err) => {
+                println!("Error initializing art_net: {:?}", err);
+                art_net_controller = art_net::ArtNet::new();
             }
-            count += 1;
         }
-
-        // TODO
-        //art_net.send_data(vec![(255. / 10. * received) as u8; 270])
     }
 }

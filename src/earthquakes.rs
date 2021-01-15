@@ -1,4 +1,5 @@
-use chrono::prelude::{NaiveDateTime};
+use chrono::prelude::NaiveDateTime;
+use chrono::Utc;
 use serde::Deserialize;
 use std::error::Error;
 use std::sync::mpsc::Sender;
@@ -6,7 +7,7 @@ use std::{thread, time};
 
 #[derive(Deserialize, std::fmt::Debug, Copy, Clone)]
 pub struct Properties {
-    mag: f64,
+    mag: f32,
     time: i64,
 }
 
@@ -32,12 +33,18 @@ async fn get_earthquake(time: NaiveDateTime) -> Result<Vec<Feature>, Box<dyn Err
     Ok(resp.features)
 }
 
-pub fn watch_earthquakes(tx: Sender<f64>) -> () {
-    //let mut last_earthquake = Utc::now().naive_utc();
-    let mut last_earthquake = NaiveDateTime::from_timestamp(1602851133, 0);
+pub fn watch_earthquakes(tx: Sender<f32>) -> () {
+    let mut last_earthquake = Utc::now().naive_utc();
+    //let mut last_earthquake = NaiveDateTime::from_timestamp(1602851133, 0);
 
     loop {
-        let new_earthquakes = get_earthquake(last_earthquake).unwrap();
+        let new_earthquakes = match get_earthquake(last_earthquake) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("Failed to earthquake: {}", e);
+                vec![]
+            }
+        };
 
         if new_earthquakes.len() > 0 {
             let timestamp = (new_earthquakes[0].clone().properties.time / 1000) + 1 as i64;

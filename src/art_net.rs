@@ -15,13 +15,7 @@ pub struct ArtNet {
 
 impl ArtNet {
     pub fn new() -> Result<Self, Error> {
-        let socket = match UdpSocket::bind((DEVICE_IP, 6454)) {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!("Failed to initialize Art-Net: {}", e);
-                return Err(e);
-            }
-        };
+        let socket = UdpSocket::bind((DEVICE_IP, 6454))?;
 
         let broadcast_addr = (ART_NET_CONTROLLER_IP, 6454)
             .to_socket_addrs()
