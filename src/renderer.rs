@@ -260,7 +260,15 @@ impl WGPUState {
                 .flat_map(|padded_buffer_row| {
                     &padded_buffer_row[..self.buffer_dimensions.unpadded_bytes_per_row]
                 })
-                .for_each(|c| result.push(c.clone()));
+                .enumerate()
+                .for_each(
+                    |(i,c)| {
+                        // Skip alpha value
+                        if (i + 1) % 4 != 0 {
+                            result.push(c.clone());
+                        }
+                    }
+                );
 
             // Free storage_buffer memory
             drop(data);
@@ -268,5 +276,30 @@ impl WGPUState {
         }
 
         result
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_render() {
+        use futures::executor::block_on;
+        
+        // When rendering 128 pixels (32*4)
+        let mut wgpu_state = block_on(WGPUState::new(32, 4));
+        let result = block_on(wgpu_state.render());
+
+        // It should return 384 values (32*4*3)
+        assert_eq!(
+            result.len(),
+            384,
+            "Lenght was not 384, length was `{}`",
+            result.len()
+        );
+
+        // And each value shouble be non-negative, less than 256
+        assert!(result.iter().all(|x| x >= &0 && x <= &255))
     }
 }
