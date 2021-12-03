@@ -1,6 +1,6 @@
 # AMAZING LED WALL
 
-## Install dependencies
+## Fetch dependencies
 ```
 cargo fetch
 ```

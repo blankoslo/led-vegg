@@ -27,18 +27,19 @@ const POLLING_TIME: time::Duration = time::Duration::from_secs(10);
 
 #[tokio::main]
 async fn get_earthquake(time: NaiveDateTime) -> Result<Vec<Feature>, Box<dyn Error + Send + Sync>> {
+    let client = reqwest::Client::builder().build()?;
     let url = format!("{}{}", BASE_URL, time.format("%Y-%m-%dT%H:%M:%S"));
-    let resp = reqwest::get(&url).await?.json::<Response>().await?;
+    let response = client.get(&url).send().await?.json::<Response>().await?;
 
-    Ok(resp.features)
+    Ok(response.features)
 }
 
 pub fn watch_earthquakes(tx: Sender<f32>) -> () {
-    let mut last_earthquake = Utc::now().naive_utc();
-    //let mut last_earthquake = NaiveDateTime::from_timestamp(1602851133, 0);
+    //let mut last_earthquake = Utc::now().naive_utc();
+    let mut last_earthquake = NaiveDateTime::from_timestamp(1602851133, 0);
 
     loop {
-        let new_earthquakes = match get_earthquake(last_earthquake) {
+        let new_earthquakes: Vec<Feature> = match get_earthquake(last_earthquake) {
             Ok(s) => s,
             Err(e) => {
                 eprintln!("Failed to earthquake: {}", e);

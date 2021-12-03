@@ -261,14 +261,12 @@ impl WGPUState {
                     &padded_buffer_row[..self.buffer_dimensions.unpadded_bytes_per_row]
                 })
                 .enumerate()
-                .for_each(
-                    |(i,c)| {
-                        // Skip alpha value
-                        if (i + 1) % 4 != 0 {
-                            result.push(c.clone());
-                        }
+                .for_each(|(i, c)| {
+                    // Skip alpha value
+                    if (i + 1) % 4 != 0 {
+                        result.push(c.clone());
                     }
-                );
+                });
 
             // Free storage_buffer memory
             drop(data);
@@ -286,7 +284,6 @@ mod tests {
     #[test]
     fn test_render() {
         use futures::executor::block_on;
-        
         // When rendering 128 pixels (32*4)
         let mut wgpu_state = block_on(WGPUState::new(32, 4));
         let result = block_on(wgpu_state.render());
